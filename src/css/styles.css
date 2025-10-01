@@ -20,7 +20,7 @@ img {
   height: auto;
 }
 
-.form {
+.form-search {
   margin-top: 36px;
   display: flex;
   align-items: center;
@@ -86,7 +86,7 @@ img {
 
 
 
-.gallery {
+.card-container {
   max-width: 1300px;
   display: flex;
   flex-wrap: wrap;
