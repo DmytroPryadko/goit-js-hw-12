@@ -1,117 +1,161 @@
-import iziToast from "izitoast";
-import "izitoast/dist/css/iziToast.min.css";
-import SimpleLightbox from "simplelightbox";
-import "simplelightbox/dist/simple-lightbox.min.css";
+import { httpRequest } from './js/pixabay-api';
+import iziToast from 'izitoast';
+import 'izitoast/dist/css/iziToast.min.css';
+// import error from './img/error.svg';
+import { createMurkup } from './js/render-functions';
+import SimpleLightbox from 'simplelightbox';
+import 'simplelightbox/dist/simple-lightbox.min.css';
 
-import { getPictures } from './js/pixabay-api.js';
-import { createMarkup, onSearchError, onFetchError, buttonService,} from './js/render-functions';
+const key = '44769616-4ffe0cee5617f53d3e1075857';
+let perPage = 15;
+let page = 1;
+let maxPage;
+let searchText = '';
+const hiddenClass = 'visually-hidden';
 
+let lightbox = new SimpleLightbox('.list a', {
+  captions: true,
+  captionType: 'attr',
+  captionsData: 'alt',
+  captionPosition: 'bottom',
+  captionDelay: 250,
+});
 
-
-const formSearch = document.querySelector('.form-search');
-const cardContainer = document.querySelector('.card-container');
-const loadMoreBtn = document.querySelector('[data-action="load-more"]');
-const spinner = document.querySelector('.spinner');
-
-const params = {
-    q: "",
-    page: 1,
-    pageSize: 15,
-    maxPage: 0,
-    imageType: 'photo',
-    orientation: 'horizontal',
-    safeSearch: 'true',
+const elements = {
+  form: document.querySelector('.search-form'),
+  list: document.querySelector('.list'),
+  input: document.querySelector('.search-input'),
+  loaderBtn: document.querySelector('.loader-btn'),
+  loader: document.querySelector('.loader'),
 };
 
-    const lightbox = new SimpleLightbox('.card-container a', {
-        captions: true,
-        captionsData: 'alt',
-        captionPosition: 'bottom',
-        captionDelay: 250,
+elements.form.addEventListener('submit', searchQuery);
+
+async function searchQuery(evt) {
+  evt.preventDefault();
+  elements.list.innerHTML = '';
+  page = 1;
+  searchText = evt.target.elements.input.value.trim();
+
+  if (searchText === '') {
+    iziToast.show({
+      backgroundColor: '#ef4040',
+      close: false,
+      closeOnClick: true,
+      progressBarColor: 'white',
+      title: 'Error',
+      titleColor: 'white',
+      iconUrl: error,
+      position: 'topRight',
+      icon: 'icon-error.svg',
+      messageColor: 'white',
+      messageSize: '16px',
+      message: 'Form field must be filled in',
     });
+    elements.form.reset();
+    hideLoaderBtn();
+    return;
+  }
 
-    
-buttonService.hide(loadMoreBtn);
+  showLoaderBtn();
+  disableLoaderBtn();
+  showLoader();
 
-formSearch.addEventListener('submit', handlerSearch);
+  try {
+    const data = await httpRequest(key, searchText, perPage, page);
+    maxPage = Math.ceil(data.totalHits / perPage);
+    const image = data.hits;
+    elements.list.insertAdjacentHTML('beforeend', createMurkup(image));
 
-async function handlerSearch(event) {
-    event.preventDefault();
+    lightbox.refresh();
 
-    const form = event.currentTarget;
-
-    cardContainer.innerHTML = "";
-    params.page = 1;
-    params.q = form.elements.search.value.trim().toLowerCase();
-
-    if (!params.q) {
-        onSearchError();
-        form.reset();
-        return;
+    if (image.length !== data.totalHits && image.length > 0) {
+      enableLoaderBtn();
+      hideLoader();
+      elements.loaderBtn.addEventListener('click', getLoadMoreImage);
+    } else {
+      iziToast.show({
+        backgroundColor: '#ef4040',
+        close: false,
+        closeOnClick: true,
+        progressBarColor: 'white',
+        title: 'Error',
+        titleColor: 'white',
+        iconUrl: error,
+        position: 'topRight',
+        icon: 'icon-error.svg',
+        messageColor: 'white',
+        messageSize: '16px',
+        message:
+          '"Sorry, there are no images matching your search query. Please try again!"',
+      });
+      hideLoader();
+      hideLoaderBtn();
     }
-
-    buttonService.show(loadMoreBtn);
-    buttonService.disable(loadMoreBtn, spinner);
-
-    try {
-        const { hits, totalHits } = await getPictures(params);
-        
-        if (hits.length === 0) {
-            onFetchError();
-            buttonService.hide(loadMoreBtn);
-            form.reset();
-            return;
-            
-        }
-
-        params.maxPage = Math.ceil(totalHits / params.pageSize);
-        createMarkup(hits, cardContainer);  
-        lightbox.refresh();
-
-        if (hits.length > 0 && params.page < params.maxPage) {
-            buttonService.enable(loadMoreBtn, spinner);
-            loadMoreBtn.addEventListener('click', handlerLoadMore);
-        } else {
-            buttonService.hide(loadMoreBtn);
-        }
-
-    } catch (err) {
-        console.error('Error fetching pictures:', err);
-        onFetchError();
-    } finally {
-        form.reset();
-    }
+  } catch (err) {
+    console.log(err);
+  } finally {
+    elements.form.reset();
+  }
 }
 
-async function handlerLoadMore() {
-    params.page += 1;
-    buttonService.disable(loadMoreBtn, spinner);
+async function getLoadMoreImage() {
+  page += 1;
+  disableLoaderBtn();
+  showLoader();
+  try {
+    const data = await httpRequest(key, searchText, perPage, page);
+    const image = data.hits;
+    elements.list.insertAdjacentHTML('beforeend', createMurkup(image));
+    lightbox.refresh();
+    scrolePage();
+  } catch (err) {
+    console.log(err);
+  } finally {
+    enableLoaderBtn();
+    hideLoader();
 
-    try {
-        const { hits } = await getPictures(params);
-        createMarkup(hits, cardContainer);  
-        smoothScroll();
-        lightbox.refresh();
-
-    } catch (err) {
-  console.log(err);
-    } finally {
-        buttonService.enable(loadMoreBtn, spinner);
-        
-        if (params.page === params.maxPage) {
-            buttonService.hide(loadMoreBtn);
-            loadMoreBtn.removeEventListener('click', handlerLoadMore);
-                iziToast.error({
-            message: 'We\'re sorry, but you\'ve reached the end of search results.',
-        });
-        }
+    if (page === maxPage) {
+      hideLoaderBtn();
+      elements.loaderBtn.removeEventListener('click', getLoadMoreImage);
+      iziToast.show({
+        class: 'toast',
+        position: 'topRight',
+        messageColor: 'black',
+        message: `We're sorry, but you've reached the end of search results.`,
+      });
     }
+  }
 }
 
-function smoothScroll() {
-    const { height: cardHeight } = document.querySelector('.card-container li').getBoundingClientRect();
-    window.scrollBy({
-        top: cardHeight * 2,
-        behavior: 'smooth',
-    });
+function hideLoaderBtn() {
+  elements.loaderBtn.classList.add(hiddenClass);
+}
+
+function showLoaderBtn() {
+  elements.loaderBtn.classList.remove(hiddenClass);
+}
+
+function disableLoaderBtn() {
+  elements.loaderBtn.disabled = true;
+}
+
+function showLoader() {
+  elements.loader.classList.remove(hiddenClass);
+}
+
+function enableLoaderBtn() {
+  elements.loaderBtn.disabled = false;
+}
+
+function hideLoader() {
+  elements.loader.classList.add(hiddenClass);
+}
+
+function scrolePage() {
+  const li = elements.list.lastChild.getBoundingClientRect();
+  scrollBy({
+    top: li.top + li.height * 2,
+    behavior: 'smooth',
+  });
 }
