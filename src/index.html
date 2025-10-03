@@ -1,23 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pixabay Search</title>
-    <link rel="stylesheet" href="./css/styles.css" />
-  </head>
-  <body>
-    <div class="container">
-      <form class="form">
-        <input class="input" type="text" name="input" />
-        <button class="button" type="submit">Search</button>
-      </form>
-      <ul class="gallery"></ul>
-      <button class="loadMoreBtn">Load more</button>
-      <span class="loader"></span>
-    </div>
 
-    <script type="module" src="./main.js"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Search</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+
+<body>
+  <div class="form-gallery">
+    <form id="search-form">
+      <input class="input" type="text" name="query" autocomplete="off" placeholder="Search images..." />
+      <button class="btn" type="submit">Search</button>
+    </form>
+    <div class="loader hidden"></div>
+    <div class="gallery gallery-css"></div>
+
+    <button class="btn-l load-more hidden">Load more</button>
+  </div>
+  <script type="module" src="./main.js"></script>
+</body>
+
 </html>
