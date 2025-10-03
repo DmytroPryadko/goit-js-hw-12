@@ -1,88 +1,129 @@
-import { fetchImages } from './js/pixabay-api.js';
+import iziToast from 'izitoast';
+import 'izitoast/dist/css/iziToast.min.css';
+import { searchImage } from './js/pixabay-api';
 import {
-  renderImages,
+  createGallery,
   clearGallery,
-  showNoResultsMessage,
-  showLoadingIndicator,
-  hideLoadingIndicator,
-  showEndOfResultsMessage,
-} from './js/render-functions.js';
+  showLoader,
+  hideLoader,
+  showLoadMore,
+  hideLoadMore,
+  btnLoad,
+} from './js/render-functions';
 
-const form = document.querySelector('#search-form');
-const input = form.querySelector('input');
-const gallery = document.querySelector('.gallery');
-const loader = document.querySelector('.loader');
-const loadMoreBtn = document.querySelector('.load-more');
+document.addEventListener('DOMContentLoaded', function () {
+  const searchForm = document.querySelector('.form');
 
-let currentQuery = '';
-let currentPage = 1;
-let totalHits = 0;
+  const params = {
+    query: '',
+    page: 1,
+    pageSize: 15,
+    totalResults: 0,
+  };
 
-loadMoreBtn.classList.add('hidden');
+  searchForm.addEventListener('submit', searchFormEvt);
 
-form.addEventListener('submit', async (event) => {
-  event.preventDefault();
+  async function searchFormEvt(e) {
+    clearGallery();
+    params.page = 1;
+    e.preventDefault();
+    const form = e.target;
+    params.query = form.elements.query.value.trim();
+    if (params.query === '') {
+      iziToast.error({
+        backgroundColor: '#EF4040',
+        message: 'Please fill the form',
+        titleColor: '#fff',
+        messageColor: '#fff',
+        progressBarColor: '#B51B1B',
+      });
+      return;
+    }
 
-  currentQuery = input.value.trim();
-  if (!currentQuery) {
-    return;
-  }
+    try {
+      const data = await searchImage(params);
 
-  currentPage = 1;
-  clearGallery();
-  loadMoreBtn.classList.add('hidden');
-  showLoadingIndicator();
+      params.totalResults = data.totalHits;
 
-  try {
-    const data = await fetchImages(currentQuery, currentPage);
-    totalHits = data.totalHits;
-    if (data.hits.length === 0) {
-      showNoResultsMessage();
-    } else {
-      renderImages(data.hits);
-      if (totalHits > 15) {
-        loadMoreBtn.classList.remove('hidden');
+      params.maxPage = Math.ceil(params.totalResults / params.pageSize);
+
+      if (data.hits.length === 0) {
+        iziToast.error({
+          backgroundColor: '#EF4040',
+          message:
+            'Sorry, there are no images matching your search query. Please try again!',
+          titleColor: '#fff',
+          messageColor: '#fff',
+          progressBarColor: '#B51B1B',
+        });
+        hideLoader();
+        hideLoadMore();
+        return;
+      } else {
+        showLoader();
+        createGallery(data.hits);
       }
+
+      if (data.hits.length >= 15) {
+        showLoadMore();
+      } else {
+        hideLoadMore();
+      }
+    } catch (error) {
+      console.log(error);
+      iziToast.error({
+        backgroundColor: '#EF4040',
+        message: 'Sorry, something goes wrong. Please, try again later!',
+        titleColor: '#fff',
+        messageColor: '#fff',
+        progressBarColor: '#B51B1B',
+      });
+    } finally {
+      hideLoader();
     }
-  } catch (error) {
-    console.error('Error:', error);
-    iziToast.error({
-      title: 'Error',
-      message: 'Something went wrong. Please try again later.',
-    });
-  } finally {
-    hideLoadingIndicator();
+
+    form.reset();
   }
-});
 
-loadMoreBtn.addEventListener('click', async () => {
-  currentPage += 1;
-  showLoadingIndicator();
+  btnLoad.addEventListener('click', handleLoadMore);
 
-  try {
-    const data = await fetchImages(currentQuery, currentPage);
-    renderImages(data.hits);
+  async function handleLoadMore() {
+    params.page += 1;
 
-    const { height: cardHeight } = document
-      .querySelector('.gallery')
-      .firstElementChild.getBoundingClientRect();
+    showLoader();
+    hideLoadMore();
 
-    window.scrollBy({
-      top: cardHeight * 2,
-      behavior: 'smooth',
-    });
+    try {
+      const data = await searchImage(params);
+      createGallery(data.hits);
 
-    if (currentPage * 15 >= totalHits) {
-      loadMoreBtn.classList.add('hidden');
-      showEndOfResultsMessage();
+      const galleryItem = document.querySelector('.img-wrap');
+      const galleryItemHeight = galleryItem.getBoundingClientRect().height;
+      window.scrollBy({ top: galleryItemHeight * 2, behavior: 'smooth' });
+    } catch (error) {
+      console.log(error);
+      iziToast.error({
+        backgroundColor: '#EF4040',
+        message: 'Sorry, something goes wrong. Please, try again later!',
+        titleColor: '#fff',
+        messageColor: '#fff',
+        progressBarColor: '#B51B1B',
+      });
+    } finally {
+      hideLoader();
+      showLoadMore();
     }
-  } catch (error) {
-    console.error('Error:', error);
-    iziToast.error({
-      title: 'Error',
-      message: 'Something went wrong. Please try again later.',
-    });
-  } finally {
-    hideLoadingIndicator();
+
+    if (params.page === params.maxPage) {
+      hideLoadMore();
+      iziToast.error({
+        backgroundColor: '#EF4040',
+        message: "We're sorry, but you've reached the end of search results.",
+        titleColor: '#fff',
+        messageColor: '#fff',
+        progressBarColor: '#B51B1B',
+      });
+      btnLoad.removeEventListener('click', handleLoadMore);
+    }
   }
 });
