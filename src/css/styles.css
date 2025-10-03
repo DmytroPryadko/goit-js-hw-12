@@ -53,7 +53,7 @@ ul {
 .button:hover {
   background: #6c8cff;
 }
-.list {
+.gallery {
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
