@@ -1,34 +1,37 @@
-
-export function createMurkup(array) {
-
-    return array.map(({ webformatURL, largeImageURL, tags, likes, views, comments, downloads }) =>
-        
-  `<li class="list-item">
-  <a class="list-item-link" href="${largeImageURL}">
-    <img
-      class="list-item-image"
-      src="${webformatURL}"
-      alt="${tags}"
-    />
-  </a>
-  <ul class="wrap-in-list-item">
-            <li item-in-wrap>
-              <h3 class="item-in-wrap-title">Likes</h3>
-              <p class="item-in-wrap-text">${likes}</p>
+export default function createMarkup(array) {
+    return array
+            .map(
+              ({
+                webformatURL,
+                largeImageURL,
+                tags,
+                likes,
+                views,
+                comments,
+                downloads,
+              }) => {
+                return `<li class="item">
+          <a href="${largeImageURL}"><img class="image" src="${webformatURL}" alt="${tags}" /></a>
+          <ul class="item-list">
+            <li class="item-list-item">
+              <h3 class="title">Likes</h3>
+              <p class="value">${likes}</p>
             </li>
-            <li item-in-wrap>
-              <h3 class="item-in-wrap-title">Views</h3>
-              <p class="item-in-wrap-text">${views}</p>
+            <li class="item-list-item">
+              <h3 class="title">Views</h3>
+              <p class="value">${views}</p>
             </li>
-            <li item-in-wrap>
-              <h3 class="item-in-wrap-title">Comments</h3>
-              <p class="item-in-wrap-text">${comments}</p>
+            <li class="item-list-item">
+              <h3 class="title">Comments</h3>
+              <p class="value">${comments}</p>
             </li>
-            <li item-in-wrap>
-              <h3 class="item-in-wrap-title">Downloads</h3>
-              <p class="item-in-wrap-text">${downloads}</p>
+            <li class="item-list-item">
+              <h3 class="title">Downloads</h3>
+              <p class="value">${downloads}</p>
             </li>
           </ul>
-  
-</li>`).join(""); 
+        </li>`;
+              }
+            )
+            .join('');
 }

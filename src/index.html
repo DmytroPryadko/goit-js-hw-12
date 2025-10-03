@@ -4,34 +4,20 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vanilla App Template</title>
+    <title>Pixabay Search</title>
     <link rel="stylesheet" href="./css/styles.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
-      rel="stylesheet"
-    />
   </head>
   <body>
-    <div class="search-container">
-      <form class="form" id="task-form">
-        <input
-          class="search-input"
-          type="text"
-          name="input"
-          placeholder="Search images..."
-        />
-        <button class="search-form-btn" type="submit">Search</button>
+    <div class="container">
+      <form class="form">
+        <input class="input" type="text" name="input" />
+        <button class="button" type="submit">Search</button>
       </form>
-      <div class="list-container">
-        <ul class="gallery"></ul>
-      </div>
-      <button class="loader-btn visually-hidden" type="button">
-        Load more
-      </button>
-      <span class="loader visually-hidden"></span>
+      <ul class="list"></ul>
+      <button class="loadMoreBtn">Load more</button>
+      <span class="loader"></span>
     </div>
+
     <script type="module" src="./main.js"></script>
   </body>
 </html>
